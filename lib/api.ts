@@ -1,6 +1,9 @@
 // API Configuration
 // Set NEXT_PUBLIC_API_URL in .env.local for local dev or Vercel env vars for production
 // Default to the actual GCP Cloud Run URL (updated after GCP config changes)
+// IMPORTANT: If using Vercel, make sure NEXT_PUBLIC_API_URL is set to the correct URL
+// Correct URL: https://interview-etl-backend-bwxhuzcaka-uc.a.run.app
+// OLD URL (DO NOT USE): https://interview-etl-backend-245695174310.us-central1.run.app
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://interview-etl-backend-bwxhuzcaka-uc.a.run.app';
 
 // Log the API URL being used (helpful for debugging)
