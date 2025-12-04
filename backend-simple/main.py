@@ -174,6 +174,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 file_data = {
                     'id': file_id,
                     'name': file.filename,
+                    'original_name': file.filename,  # Store original name for frontend compatibility
                     'size': file.size,
                     'type': file.content_type or 'unknown',
                     'uploaded_at': datetime.utcnow().isoformat(),

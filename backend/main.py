@@ -618,116 +618,128 @@ async def get_job_status(job_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get job status: {str(e)}")
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    """Upload a file and store its content"""
+async def upload_file(uploaded_files_list: List[UploadFile] = File(...)):
+    """Upload and store files with content for processing"""
     try:
-        if not file.filename:
-            raise HTTPException(status_code=400, detail="No filename provided")
+        if not uploaded_files_list:
+            raise HTTPException(status_code=400, detail="No files provided")
         
-        print(f"📤 Receiving upload: {file.filename} ({file.size or 0} bytes)")
-        
-        file_id = generate_id()
-        
-        # Read and store actual file content
-        content = await file.read()
-        
-        if not content:
-            raise HTTPException(status_code=400, detail="File is empty")
-        
-        # Extract text based on file type
-        filename_lower = file.filename.lower() if file.filename else ''
-        content_text = ""
-        
-        try:
-            # Handle DOCX files
-            if filename_lower.endswith('.docx'):
-                if DOCX_AVAILABLE:
-                    try:
-                        doc = docx.Document(BytesIO(content))
-                        text_parts = []
-                        for paragraph in doc.paragraphs:
-                            if paragraph.text.strip():
-                                text_parts.append(paragraph.text)
-                        content_text = '\n\n'.join(text_parts)
-                        if not content_text.strip():
-                            raise ValueError("DOCX file appears to be empty")
-                        print(f"✅ Extracted text from DOCX: {len(content_text)} characters")
-                    except Exception as e:
-                        print(f"⚠️ Failed to extract DOCX text: {e}, storing as binary")
+        processed_files = []
+        for file in uploaded_files_list:
+            if not file.filename:
+                continue
+            
+            print(f"📤 Receiving upload: {file.filename} ({file.size or 0} bytes)")
+            
+            # Read the actual file content
+            content = await file.read()
+            
+            if not content:
+                raise HTTPException(status_code=400, detail=f"File {file.filename} is empty")
+            
+            # Extract text based on file type
+            filename_lower = file.filename.lower() if file.filename else ''
+            content_text = ""
+            
+            try:
+                # Handle DOCX files
+                if filename_lower.endswith('.docx'):
+                    if DOCX_AVAILABLE:
+                        try:
+                            doc = docx.Document(BytesIO(content))
+                            text_parts = []
+                            for paragraph in doc.paragraphs:
+                                if paragraph.text.strip():
+                                    text_parts.append(paragraph.text)
+                            content_text = '\n\n'.join(text_parts)
+                            if not content_text.strip():
+                                raise ValueError("DOCX file appears to be empty")
+                            print(f"✅ Extracted text from DOCX: {len(content_text)} characters")
+                        except Exception as e:
+                            print(f"⚠️ Failed to extract DOCX text: {e}, storing as base64")
+                            import base64
+                            content_text = base64.b64encode(content).decode('utf-8')
+                    else:
+                        print(f"⚠️ python-docx not available, storing DOCX as base64")
                         import base64
                         content_text = base64.b64encode(content).decode('utf-8')
+                
+                # Handle PDF files
+                elif filename_lower.endswith('.pdf'):
+                    if PDF_AVAILABLE:
+                        try:
+                            pdf_reader = PyPDF2.PdfReader(BytesIO(content))
+                            text_parts = []
+                            for page in pdf_reader.pages:
+                                text = page.extract_text()
+                                if text.strip():
+                                    text_parts.append(text)
+                            content_text = '\n\n'.join(text_parts)
+                            print(f"✅ Extracted text from PDF: {len(content_text)} characters")
+                        except Exception as e:
+                            print(f"⚠️ Failed to extract PDF text: {e}, storing as base64")
+                            import base64
+                            content_text = base64.b64encode(content).decode('utf-8')
+                    else:
+                        print(f"⚠️ PyPDF2 not available, storing PDF as base64")
+                        import base64
+                        content_text = base64.b64encode(content).decode('utf-8')
+                
+                # Handle text files (TXT, MD, CSV)
+                elif filename_lower.endswith(('.txt', '.md', '.csv')):
+                    # Try different encodings
+                    for encoding in ['utf-8', 'latin-1', 'cp1252']:
+                        try:
+                            content_text = content.decode(encoding)
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    else:
+                        # Fallback to utf-8 with errors='ignore'
+                        content_text = content.decode('utf-8', errors='ignore')
+                    print(f"✅ Extracted text from {filename_lower.split('.')[-1]}: {len(content_text)} characters")
+                
+                # Fallback: try to decode as text, then base64
                 else:
-                    print(f"⚠️ python-docx not available, storing DOCX as binary")
-                    import base64
-                    content_text = base64.b64encode(content).decode('utf-8')
-            
-            # Handle PDF files
-            elif filename_lower.endswith('.pdf') and PDF_AVAILABLE:
-                try:
-                    pdf_reader = PyPDF2.PdfReader(BytesIO(content))
-                    text_parts = []
-                    for page in pdf_reader.pages:
-                        text = page.extract_text()
-                        if text.strip():
-                            text_parts.append(text)
-                    content_text = '\n\n'.join(text_parts)
-                    print(f"✅ Extracted text from PDF: {len(content_text)} characters")
-                except Exception as e:
-                    print(f"⚠️ Failed to extract PDF text: {e}, storing as binary")
-                    import base64
-                    content_text = base64.b64encode(content).decode('utf-8')
-            
-            # Handle text files (TXT, MD, CSV)
-            elif filename_lower.endswith(('.txt', '.md', '.csv')):
-                # Try different encodings
-                for encoding in ['utf-8', 'latin-1', 'cp1252']:
                     try:
-                        content_text = content.decode(encoding)
-                        break
-                    except UnicodeDecodeError:
-                        continue
-                else:
-                    # Fallback to utf-8 with errors='ignore'
-                    content_text = content.decode('utf-8', errors='ignore')
-                print(f"✅ Extracted text from {filename_lower.split('.')[-1]}: {len(content_text)} characters")
+                        content_text = content.decode('utf-8', errors='ignore')
+                        # If decoded text is mostly non-printable, it's probably binary
+                        if len([c for c in content_text[:100] if c.isprintable()]) < 50:
+                            raise ValueError("Likely binary file")
+                    except Exception:
+                        import base64
+                        content_text = base64.b64encode(content).decode('utf-8')
+                        print(f"⚠️ Binary file detected, storing as base64")
             
-            # Fallback: try to decode as text, then base64
-            else:
-                try:
-                    content_text = content.decode('utf-8', errors='ignore')
-                    # If decoded text is mostly non-printable, it's probably binary
-                    if len([c for c in content_text[:100] if c.isprintable()]) < 50:
-                        raise ValueError("Likely binary file")
-                except Exception:
-                    import base64
-                    content_text = base64.b64encode(content).decode('utf-8')
-                    print(f"⚠️ Binary file detected, storing as base64")
-        
-        except Exception as e:
-            print(f"❌ Error processing file content: {e}")
-            # Last resort: store as base64
-            import base64
-            content_text = base64.b64encode(content).decode('utf-8')
-        
-        # Store file with content
-        files[file_id] = {
-            'id': file_id,
-            'name': file.filename,
-            'size': file.size or len(content),
-            'type': file.content_type or 'unknown',
-            'content': content_text,
-            'content_length': len(content_text),
-            'uploaded_at': get_timestamp()
-        }
-        
-        print(f"✅ Uploaded file: {file.filename} ({len(content_text)} characters) - ID: {file_id}")
+            except Exception as e:
+                print(f"❌ Error processing file content for {file.filename}: {e}")
+                # Last resort: store as base64
+                import base64
+                content_text = base64.b64encode(content).decode('utf-8')
+            
+            file_id = generate_id()
+            
+            # Store file metadata and content
+            file_data = {
+                'id': file_id,
+                'name': file.filename,
+                'original_name': file.filename,  # Store original name for frontend compatibility
+                'size': file.size or len(content),
+                'type': file.content_type or 'unknown',
+                'uploaded_at': get_timestamp(),
+                'content': content_text,  # Store actual content
+                'content_length': len(content_text)
+            }
+            
+            files[file_id] = file_data
+            processed_files.append(file_data)
+            
+            print(f"✅ Uploaded file: {file.filename} ({len(content_text)} characters) - ID: {file_id}")
         
         return {
-            "id": file_id,
-            "name": file.filename,
-            "size": file.size or len(content),
-            "type": file.content_type or 'unknown',
-            "message": "File uploaded successfully"
+            "success": True,
+            "message": f"Successfully processed {len(processed_files)} files",
+            "files": processed_files
         }
         
     except HTTPException:
