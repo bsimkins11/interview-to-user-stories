@@ -113,10 +113,16 @@ export function InterviewTranscriptInput({
           onTranscriptsAdded(successfulWithIds);
         }
       }).catch(error => {
-        console.error('Upload error:', error);
+        console.error('Upload promise rejection:', error);
+        // Update all transcripts to error state
+        setTranscripts(prev => prev.map(t => 
+          newTranscripts.some(nt => nt.id === t.id) 
+            ? { ...t, status: 'error' as const }
+            : t
+        ));
         toast({
           title: "Upload failed",
-          description: error.message || "Failed to upload files. Please try again.",
+          description: error?.message || "Failed to upload files. Please check the browser console for details.",
           variant: "destructive",
         });
         
