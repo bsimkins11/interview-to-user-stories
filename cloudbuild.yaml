@@ -1,0 +1,60 @@
+steps:
+  # Build and deploy the backend API
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-backend', './backend']
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-backend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - run
+      - deploy
+      - interview-etl-backend
+      - --image
+      - us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-backend
+      - --region
+      - us-central1
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - ENVIRONMENT=production,GCP_PROJECT_ID=$PROJECT_ID
+      - --service-account
+      - interview-etl-service@$PROJECT_ID.iam.gserviceaccount.com
+
+  # Build and deploy the worker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-worker', './worker']
+    dir: '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-worker']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - run
+      - deploy
+      - interview-etl-worker
+      - --image
+      - us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-worker
+      - --region
+      - us-central1
+      - --platform
+      - managed
+      - --no-allow-unauthenticated
+      - --set-env-vars
+      - ENVIRONMENT=production,GCP_PROJECT_ID=$PROJECT_ID
+      - --service-account
+      - interview-etl-service@$PROJECT_ID.iam.gserviceaccount.com
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-backend'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/interview-etl-repo/interview-etl-worker'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'

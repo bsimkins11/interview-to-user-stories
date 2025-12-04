@@ -1,0 +1,21 @@
+This is a test interview transcript file.
+
+Interviewer: Hello, thank you for taking the time to speak with us today. Can you tell us a bit about your role and the challenges you're currently facing?
+
+Interviewee: Sure! I'm a product manager at a mid-sized software company. One of our biggest challenges right now is understanding what features our customers actually need versus what they think they want. We spend a lot of time building things that don't get used.
+
+Interviewer: That's interesting. Can you give me a specific example of a feature that didn't meet expectations?
+
+Interviewee: Well, we recently built an advanced reporting dashboard that took three months to develop. When we launched it, only about 10% of our users actually used it. We realized later that what they really needed was just better export functionality for the existing reports.
+
+Interviewer: How do you currently gather requirements from customers?
+
+Interviewee: We mostly rely on support tickets and occasional customer calls. But honestly, it's not very systematic. We're often making decisions based on the loudest customer or the most recent request, rather than doing proper research.
+
+Interviewer: What would be your ideal process for gathering and prioritizing requirements?
+
+Interviewee: I'd love to have a more structured approach. Maybe regular customer interviews, surveys, and a way to track how different user segments use our product. We need better data to make informed decisions about what to build next.
+
+Interviewer: Thank you for your time. This has been very helpful.
+
+Interviewee: You're welcome! I'm glad we could have this conversation.

@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Local development backend
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./config/local.env
+    environment:
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+      - ./shared:/app/shared
+      - ./config:/app/config
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Local development worker
+  worker:
+    build: ./worker
+    env_file:
+      - ./config/local.env
+    environment:
+      - ENVIRONMENT=development
+    volumes:
+      - ./worker:/app
+      - ./shared:/app/shared
+      - ./config:/app/config
+      - ./service-account-key.json:/app/credentials.json:ro
+    command: python main.py
+
+  # Note: This setup requires Google Cloud credentials to be configured
+  # Make sure to set GOOGLE_APPLICATION_CREDENTIALS environment variable
+  # and update config/local.env with your actual values

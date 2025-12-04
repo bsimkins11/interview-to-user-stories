@@ -1,0 +1,32 @@
+# Python files that confuse buildpack detection
+*.py
+__pycache__/
+*.pyc
+
+# Backend directory
+backend/
+
+# Worker directory
+worker/
+
+# Test files
+test-ai-pipeline.py
+
+# Development files
+.env.local
+.env.development
+
+# Git files
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+
+# Docker files
+docker-compose.yml
+
+# Other unnecessary files
+node_modules/
+.next/
