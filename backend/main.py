@@ -618,7 +618,7 @@ async def get_job_status(job_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get job status: {str(e)}")
 
 @app.post("/upload")
-async def upload_file(uploaded_files_list: List[UploadFile] = File(...)):
+async def upload_file(uploaded_files_list: List[UploadFile] = File(..., alias="files")):
     """Upload and store files with content for processing"""
     try:
         if not uploaded_files_list:
