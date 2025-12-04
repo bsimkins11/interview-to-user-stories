@@ -68,6 +68,7 @@ export function InterviewTranscriptInput({
         const errors = result.filter(r => r.error);
         if (errors.length > 0) {
           const errorMessages = errors.map(e => `${e.name}: ${e.error}`).join(', ');
+          console.error('Upload errors detected:', errors);
           toast({
             title: "Upload failed",
             description: errorMessages || "Some files failed to upload. Please try again.",

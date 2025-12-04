@@ -122,6 +122,7 @@ export async function uploadFiles(files: File[]): Promise<any[]> {
       method: 'POST',
       body: formData,
       // Don't set Content-Type header - browser will set it with boundary for FormData
+      credentials: 'omit', // Don't send cookies
     });
     
     console.log(`Upload response status: ${response.status} ${response.statusText}`);
@@ -173,9 +174,21 @@ export async function uploadFiles(files: File[]): Promise<any[]> {
     
   } catch (error) {
     console.error(`Upload error:`, error);
+    
+    // Check if it's a network/CORS error
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.error('Network error - possible CORS or connection issue');
+      return files.map(file => ({
+        error: `Network error: Unable to connect to backend. Please check your connection and try again.`,
+        name: file.name
+      }));
+    }
+    
     // Return error for all files
+    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+    console.error(`Upload failed with error: ${errorMessage}`);
     return files.map(file => ({
-      error: error instanceof Error ? error.message : 'Upload failed',
+      error: errorMessage,
       name: file.name
     }));
   }
