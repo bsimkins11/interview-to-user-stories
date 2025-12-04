@@ -9,6 +9,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://interview-etl-b
 // Log the API URL being used (helpful for debugging)
 if (typeof window !== 'undefined') {
   console.log('🔗 Backend API URL:', API_BASE_URL);
+  // Force correct URL - ensure we're not using old cached value
+  if (API_BASE_URL.includes('245695174310')) {
+    console.error('❌ ERROR: Using OLD backend URL! This should not happen.');
+  }
 }
 
 // API Client with retry logic and error handling
